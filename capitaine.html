@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roue du capitaine</title>
+    <link rel="icon" type="image/png" href="img/favicon.png">
+  	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+	<div id="content">
+		<canvas id="confetti"></canvas>
+		<div class="result" id="resultText">Le suspens est à son comble...</div>
+		
+		<div id="main">
+			<div id="participants">
+				<h2>Participants :</h2>
+				<ul id="participantList">
+					<label><li><input type="checkbox" id="alexandre" value="Alexandre" checked>Alexandre</li></label>
+					<label><li><input type="checkbox" id="antoine" value="Antoine" checked>Antoine</li></label>
+					<label><li><input type="checkbox" id="charlene" value="Charlène" checked>Charlène</li></label>
+					<label><li><input type="checkbox" id="remi" value="Rémi" checked>Rémi</li></label>
+					<label><li><input type="checkbox" id="sebastien" value="Sébastien" checked>Sébastien</li></label>
+					<label><li><input type="checkbox" id="thomas" value="Thomas" checked>Thomas</li></label>
+					<label><li><input type="checkbox" id="youness" value="Youness" checked>Youness</li></label>
+				</ul>
+			</div>
+			<div id ="roue">
+				<div class="wheel-container">
+					<div class="arrow"></div>
+					<canvas id="wheelCanvas" class="wheel"></canvas>
+				</div>
+				<button onclick="spinWheel()">À la barre moussaillon !</button>
+			</div>
+		</div>
+				
+		<nav>
+			<ul>
+				<a href="index.html"><li>Accueil</li></a>
+			</ul>
+		</nav>
+	</div>
+    <script>
+		window.onload = function() {
+			deleteAllCookies();
+			drawWheel();
+			addCheckboxListeners(); // Ajouter les écouteurs d'événements
+		};
+
+		function deleteAllCookies() {
+			var cookies = document.cookie.split(";");
+
+			for (var i = 0; i < cookies.length; i++) {
+				var cookie = cookies[i];
+				var eqPos = cookie.indexOf("=");
+				var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+
+				// Expire le cookie immédiatement
+				document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			}
+		}
+	
+        const resultText = document.getElementById("resultText");
+        const canvas = document.getElementById("wheelCanvas");
+        const ctx = canvas.getContext("2d");
+        const confettiCanvas = document.getElementById("confetti");
+        const confettiCtx = confettiCanvas.getContext("2d");
+		const participantList = document.getElementById("participantList"); // Récupérer la liste des participants
+        // const wheelSections = ["Alexandre", "Antoine", "Charlène", "Rémi", "Sébastien", "Thomas", "Youness"];
+        const colors = ["#98ff74", "#fbff74", "#f0b3fc", "#4e64ff", "#ffc176", "#6e41c3", "#ff4242"];
+		const images = {
+            "Alexandre": "img/photo/alexandre.png",
+            "Antoine": "img/photo/antoine.png",
+            "Charlène": "img/photo/charlene.png",
+            "Rémi": "img/photo/remi.png",
+            "Sébastien": "img/photo/sebastien.png",
+            "Thomas": "img/photo/thomas.png",
+            "Youness": "img/photo/youness.png"
+        };
+        const wheelRadius = 150;
+        let currentAngle = 0;
+        let spinning = false;
+        let confettiAnimation;
+        let confettiPieces = [];
+		let wheelSections = ["Alexandre", "Antoine", "Charlène", "Rémi", "Sébastien", "Thomas", "Youness"]; // Initialiser avec tous les participants
+
+        canvas.width = wheelRadius * 2;
+        canvas.height = wheelRadius * 2;
+		
+        function drawWheel() {
+            const sliceAngle = (2 * Math.PI) / wheelSections.length;
+            for (let i = 0; i < wheelSections.length; i++) {
+                ctx.beginPath();
+                ctx.moveTo(wheelRadius, wheelRadius);
+                ctx.arc(wheelRadius, wheelRadius, wheelRadius, sliceAngle * i, sliceAngle * (i + 1));
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.stroke();
+                ctx.closePath();
+                
+                ctx.save();
+                ctx.translate(wheelRadius, wheelRadius);
+                ctx.rotate(sliceAngle * (i + 0.5));
+                ctx.fillStyle = "#000000";
+                ctx.font = "16px Arial";
+                ctx.textAlign = "right";
+                ctx.fillText(wheelSections[i], wheelRadius - 10, 10);
+                ctx.restore();
+            }
+        }
+        
+        function spinWheel() {
+            if (spinning) return;
+            spinning = true;
+            stopConfetti();
+            stopImages();
+			resultText.textContent = "Rien ne va plus, faites vos jeux...";
+            
+			// Récupérer les participants sélectionnés
+			const selectedParticipants = [];
+			const checkboxes = participantList.querySelectorAll('input[type="checkbox"]:checked');
+			checkboxes.forEach(checkbox => selectedParticipants.push(checkbox.value));
+
+			// Mettre à jour les sections de la roue avec les participants sélectionnés
+			wheelSections = selectedParticipants;
+
+			// Redessiner la roue avec les nouvelles sections
+			drawWheel();
+	
+            const randomAngle = Math.floor(2000 + Math.random() * 2000);
+            currentAngle += randomAngle;
+            canvas.style.transition = "transform 4s ease-out";
+            canvas.style.transform = `rotate(${currentAngle}deg)`;
+            
+            setTimeout(() => {
+                spinning = false;
+                const finalAngle = (currentAngle % 360) / (360 / wheelSections.length);
+                const result = wheelSections[Math.floor(wheelSections.length - finalAngle) % wheelSections.length];
+                resultText.textContent = "Et notre capitaine est : " + result + " !";
+				startConfetti();
+                startImages(images[result]);
+            }, 4000);
+        }
+		
+		function addCheckboxListeners() {
+			const checkboxes = participantList.querySelectorAll('input[type="checkbox"]');
+			checkboxes.forEach(checkbox => {
+				checkbox.addEventListener('change', updateWheel);
+			});
+		}
+
+		function updateWheel() {
+			const selectedParticipants = [];
+			const checkboxes = participantList.querySelectorAll('input[type="checkbox"]:checked');
+			checkboxes.forEach(checkbox => selectedParticipants.push(checkbox.value));
+			wheelSections = selectedParticipants;
+			drawWheel();
+		}
+        
+        function startConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            confettiPieces = Array.from({ length: 100 }, () => ({
+                x: Math.random() * confettiCanvas.width,
+                y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                speed: Math.random() * 3 + 2
+            }));
+            function drawConfetti() {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiPieces.forEach(p => {
+                    confettiCtx.fillStyle = p.color;
+                    confettiCtx.fillRect(p.x, p.y, 10, 10);
+                    p.y += p.speed;
+                    if (p.y > confettiCanvas.height) p.y = 0;
+                });
+                confettiAnimation = requestAnimationFrame(drawConfetti);
+            }
+            drawConfetti();
+        }
+        
+        function stopConfetti() {
+            if (confettiAnimation) {
+                cancelAnimationFrame(confettiAnimation);
+                confettiAnimation = null;
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                confettiPieces = [];
+            }
+        }
+        
+        function startImages(imageSrc) {
+            for (let i = 0; i < 50; i++) {
+                let img = document.createElement("img");
+                img.src = imageSrc;
+                img.classList.add("falling");
+                img.style.left = Math.random() * window.innerWidth + "px";
+                img.style.top = "-50px";
+                document.body.appendChild(img);
+                animateImage(img);
+            }
+        }
+        
+        function animateImage(img) {
+            let speed = Math.random() * 3 + 2;
+            function fall() {
+                let top = parseFloat(img.style.top) || 0;
+                if (top < window.innerHeight) {
+                    img.style.top = top + speed + "px";
+                    requestAnimationFrame(fall);
+                } else {
+                    img.remove();
+                }
+            }
+            fall();
+        }
+        
+        function stopImages() {
+            document.querySelectorAll(".falling").forEach(img => img.remove());
+        }
+    </script>
+</body>
+</html>
