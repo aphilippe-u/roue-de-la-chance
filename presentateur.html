@@ -6,6 +6,8 @@
     <title>Roue du présentateur</title>
     <link rel="icon" type="image/png" href="img/favicon.png">
   	<link rel="stylesheet" type="text/css" href="style.css">
+	<audio id="turn" src="sounds/turn.mp3" loop></audio>
+	<audio id="win" src="sounds/winPresent.wav"></audio>
 </head>
 <body>
 	<div id="content">
@@ -196,6 +198,9 @@
             stopImages();
 			resultText.textContent = "Rien ne va plus, faites vos jeux...";
             
+			var turn = document.getElementById("turn");
+			turn.play();
+			
 			// Récupérer les participants sélectionnés
 			const selectedParticipants = [];
 			const checkboxes = participantList.querySelectorAll('input[type="checkbox"]:checked');
@@ -214,9 +219,17 @@
             
             setTimeout(() => {
                 spinning = false;
+				
+				turn.pause();
+				turn.currentTime = 0;
+				
                 const finalAngle = (currentAngle % 360) / (360 / wheelSections.length);
                 const result = wheelSections[Math.floor(wheelSections.length - finalAngle) % wheelSections.length];
                 resultText.textContent = "Et notre présentateur est : " + result + " !";
+				
+				var win = document.getElementById("win");
+				win.play();
+				
 				startConfetti();
                 startImages(images[result]);
             }, 4000);

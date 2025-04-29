@@ -6,6 +6,8 @@
     <title>La spéciale</title>
     <link rel="icon" type="image/png" href="img/favicon.png">
   	<link rel="stylesheet" type="text/css" href="style.css">
+	<audio id="turn" src="sounds/turn.mp3" loop></audio>
+	<audio id="win" src="sounds/winSpecial.wav"></audio>
 </head>
 <body>
 	<div id="content">
@@ -94,6 +96,9 @@
             stopImages();
 			resultText.textContent = "Rien ne va plus, faites vos jeux...";
             
+			var turn = document.getElementById("turn");
+			turn.play();
+			
             const randomAngle = Math.floor(2000 + Math.random() * 2000);
             currentAngle += randomAngle;
             canvas.style.transition = "transform 4s ease-out";
@@ -101,9 +106,17 @@
             
             setTimeout(() => {
                 spinning = false;
+				
+				turn.pause();
+				turn.currentTime = 0;
+				
                 const finalAngle = (currentAngle % 360) / (360 / wheelSections.length);
                 const result = wheelSections[Math.floor(wheelSections.length - finalAngle) % wheelSections.length];
                 resultText.textContent = "Et le gagnant (ou la gagnate) est : " + result + " !";
+				
+				var win = document.getElementById("win");
+				win.play();
+				
 				startConfetti();
                 startImages(images[result]);
             }, 4000);
